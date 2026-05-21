@@ -4,486 +4,179 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Management Performance Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --ocean: #007AC5;
+      --shallow-ocean: #97D7FE;
+      --as24-yellow: #FFF200;
+      --lagoon: #59D7BB;
+      --black: #000000;
+      --white: #FFFFFF;
+      --line: rgba(0, 0, 0, 0.14);
+      --muted: rgba(0, 0, 0, 0.62);
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: var(--white);
+      color: var(--black);
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+    }
+    .login-card {
+      width: min(460px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      background: var(--white);
+      border-top: 5px solid var(--ocean);
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.76rem;
+      font-weight: 760;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      line-height: 1.08;
+      font-weight: 780;
+    }
+    p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 650;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font: inherit;
+      color: var(--black);
+      background: var(--white);
+    }
+    button {
+      width: 100%;
+      margin-top: 14px;
+      border: 1px solid var(--ocean);
+      border-radius: 14px;
+      padding: 13px 14px;
+      background: var(--ocean);
+      color: var(--white);
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.65; cursor: not-allowed; }
+    .status {
+      min-height: 22px;
+      margin-top: 14px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .status.error {
+      color: var(--black);
+      background: rgba(255, 242, 0, 0.55);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+  </style>
 </head>
 <body>
-  <div class="page">
-    <header class="executive-head">
-      <div>
-        <h1 class="page-title">Management Performance Dashboard</h1>
-        <p class="page-subtitle">Executive view across Budget Exposure, LM Assist and OTP. The first row highlights the current status, risk level and revenue steering points for fast management decisions.</p>
-      </div>
-      <div class="status-pill">Updated · 20.05.2026 13:44</div>
-    </header>
+  <main class="login-card" aria-labelledby="loginTitle">
+    <div class="eyebrow">Protected Dashboard</div>
+    <h1 id="loginTitle">Management Performance Dashboard</h1>
+    <p>Enter the dashboard password to unlock the current management view.</p>
+    <form id="unlockForm">
+      <label>
+        Password
+        <input id="dashboardPassword" type="password" autocomplete="current-password" autofocus>
+      </label>
+      <button id="unlockButton" type="submit">Unlock Dashboard</button>
+      <div class="status" id="unlockStatus" role="status" aria-live="polite"></div>
+    </form>
+  </main>
+  <script type="application/json" id="encryptedDashboardPayload">{"version":1,"kdf":"PBKDF2-SHA256","cipher":"AES-256-GCM","iterations":310000,"salt":"j004aMHxHcYmu0fr9emtNg==","iv":"VCaAFAAWw9rvwAS5","tag":"w89IZvJayhlcZwFz90c8hg==","data":"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"}</script>
+  <script>
+    const form = document.getElementById("unlockForm");
+    const passwordInput = document.getElementById("dashboardPassword");
+    const button = document.getElementById("unlockButton");
+    const statusNode = document.getElementById("unlockStatus");
+    const payload = JSON.parse(document.getElementById("encryptedDashboardPayload").textContent);
 
-    <section class="panel ppt-export-toolbar">
-      <div>
-        <div class="kpi-group-label">PowerPoint Export</div>
-        <h2 class="section-title">Create a compact PowerPoint PNG</h2>
-        <p class="section-subtitle">Select a predefined dashboard area and download a tightly cropped image for direct copy/paste use in PowerPoint.</p>
-      </div>
-      <div class="ppt-export-controls">
-        <select class="ppt-export-select" id="pptExportArea" aria-label="PowerPoint export area">
-          <option value="executive-snapshot">Executive KPI Snapshot</option>
-          <option value="search-result">Search / Dynamic Comparison Result</option>
-          <option value="search-kpis">Search / Dynamic Comparison KPI Cards</option>
-          <option value="search-table">Search / Dynamic Comparison Table</option>
-          <option value="budget-kpis">Budget KPI Group</option>
-          <option value="inactive-kpis">Inactive Dealer Locations KPI Group</option>
-          <option value="lm-kpis">LM Assist KPI Group</option>
-          <option value="otp-kpis">OTP KPI Group</option>
-          <option value="budget-chart">Budget: Listings vs Leads Chart</option>
-          <option value="inactive-trend">Inactive Dealer Locations Trend</option>
-          <option value="lm-trend">LM Assist Trend View</option>
-          <option value="monthly-details">Monthly Detail Tables</option>
-        </select>
-        <button class="primary" id="pptExportButton" type="button">Download PowerPoint PNG</button>
-      </div>
-    </section>
+    function base64ToBytes(value) {
+      return Uint8Array.from(atob(value), char => char.charCodeAt(0));
+    }
 
-    <section class="panel command-panel">
-      <div class="command-head">
-        <div class="command-copy">
-          <div class="kpi-group-label">Executive Search</div>
-          <h2 class="section-title">Ask for a Period or KPI Comparison</h2>
-          <p class="section-subtitle">Use natural language to compare months, quarters or years without manually setting filters. Examples: March 2025 vs March 2026, 2025 vs 2026, Q1 25 vs Q1 26.</p>
-        </div>
-        <div class="status-pill">Beta · Period comparisons</div>
-      </div>
-      <div class="command-row">
-        <input class="command-input" id="executiveSearchInput" type="search" placeholder="Example: Show me the development from March 2025 vs March 2026">
-        <button class="primary" id="executiveSearchButton" type="button">Analyze</button>
-      </div>
-      <div class="command-chips">
-        <button class="command-chip" type="button" data-query="Compare March 2025 with March 2026">March 2025 vs March 2026</button>
-        <button class="command-chip" type="button" data-query="Compare 2025 with 2026">2025 vs 2026</button>
-        <button class="command-chip" type="button" data-query="Compare first quarter 25 with first quarter 26">Q1 25 vs Q1 26</button>
-        <button class="command-chip" type="button" data-query="Compare April 2025 with April 2026">April 2025 vs April 2026</button>
-        <button class="command-chip" type="button" data-query="Show May 2026">May 2026</button>
-      </div>
-      <div class="command-result" id="executiveSearchResult" hidden></div>
-    </section>
+    function normalizePassword(value) {
+      return String(value || "").replace("daschboard", "dashboard");
+    }
 
-    <section class="grid executive-snapshot" id="executiveSnapshot">
-      <div class="panel kpi-card snapshot-card critical">
-        <div class="snapshot-label">Critical Exposure</div>
-        <div class="snapshot-value" id="snapshotBudgetLoss"></div>
-        <div class="note" id="snapshotBudgetLossNote"></div>
-      </div>
-      <div class="panel kpi-card snapshot-card attention">
-        <div class="snapshot-label">Budget Offline Dealers</div>
-        <div class="snapshot-value" id="snapshotOfflineDealers"></div>
-        <div class="note" id="snapshotOfflineDealersNote"></div>
-      </div>
-      <div class="panel kpi-card snapshot-card positive">
-        <div class="snapshot-label">LM Assist Revenue Forecast</div>
-        <div class="snapshot-value" id="snapshotLmRevenue"></div>
-        <div class="note" id="snapshotLmRevenueNote"></div>
-      </div>
-      <div class="panel kpi-card snapshot-card critical">
-        <div class="snapshot-label">OTP Gap To Target</div>
-        <div class="snapshot-value" id="snapshotOtpGap"></div>
-        <div class="note" id="snapshotOtpGapNote"></div>
-      </div>
-    </section>
+    async function deriveKey(password) {
+      const material = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: base64ToBytes(payload.salt), iterations: payload.iterations, hash: "SHA-256" },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+    }
 
-    <section class="grid kpi-groups">
-      <div class="panel kpi-group budget" id="budgetKpiGroup">
-        <div class="kpi-group-head">
-          <div class="kpi-group-copy">
-            <div class="kpi-group-label">Budget Exposure</div>
-            <h2 class="kpi-group-title">Budget-Driven Marketplace Exposure</h2>
-            <p class="kpi-group-subtitle">Shows confirmed offline dealers, dealers close to budget exhaustion and the resulting visibility impact on live listings.</p>
-          </div>
-          <div class="kpi-meta" id="budgetMeta">Live listing reference refreshed at generation time · 20.05.2026 13:44</div>
-        </div>
-        <div class="kpi-grid seven">
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Offline Dealers Today</div>
-              <div class="kpi" id="budgetOfflineDealers"></div>
-            </div>
-            <div class="note" id="budgetOfflineDealersNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Dealers Near Budget Limit</div>
-              <div class="kpi" id="budgetNearLimitDealers"></div>
-            </div>
-            <div class="note" id="budgetNearLimitDealersNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Active Listings (File)</div>
-              <div class="kpi" id="budgetActiveListings"></div>
-            </div>
-            <div class="note" id="budgetActiveListingsNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Displayed Listings (Live)</div>
-              <div class="kpi" id="budgetDisplayedListings"></div>
-            </div>
-            <div class="note" id="budgetDisplayedListingsNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Offline Listings</div>
-              <div class="kpi" id="budgetOfflineListings"></div>
-            </div>
-            <div class="note" id="budgetOfflineListingsNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Offline Share of Live Listings</div>
-              <div class="kpi" id="budgetListingLossPct"></div>
-            </div>
-            <div class="note" id="budgetListingLossPctNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">3-Day Dealer Risk</div>
-              <div class="kpi" id="budgetRisk3Days"></div>
-            </div>
-            <div class="note" id="budgetRisk3DaysNote"></div>
-          </div>
-        </div>
-      </div>
+    async function unlockDashboard(password) {
+      const key = await deriveKey(normalizePassword(password));
+      const encrypted = base64ToBytes(payload.data);
+      const tag = base64ToBytes(payload.tag);
+      const cipherText = new Uint8Array(encrypted.length + tag.length);
+      cipherText.set(encrypted, 0);
+      cipherText.set(tag, encrypted.length);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: base64ToBytes(payload.iv), tagLength: 128 },
+        key,
+        cipherText
+      );
+      const html = new TextDecoder().decode(decrypted);
+      document.open();
+      document.write(html);
+      document.close();
+    }
 
-      <div class="panel kpi-group inactive" id="inactiveKpiGroup">
-        <div class="kpi-group-head">
-          <div class="kpi-group-copy">
-            <div class="kpi-group-label">Inactive Dealer Locations</div>
-            <h2 class="kpi-group-title">Dealer Location Churn and Reactivation</h2>
-            <p class="kpi-group-subtitle">Compares active dealer locations with newly inactive and newly reactivated locations to show monthly churn pressure.</p>
-          </div>
-          <div class="kpi-meta" id="inactiveLocationsMeta"></div>
-        </div>
-        <div class="kpi-grid five">
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Inactive Location Share</div>
-              <div class="kpi" id="inactiveShare"></div>
-            </div>
-            <div class="note" id="inactiveShareNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Newly Inactive Locations</div>
-              <div class="kpi" id="inactiveNewlyInactive"></div>
-            </div>
-            <div class="note" id="inactiveNewlyInactiveNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Newly Activated Locations</div>
-              <div class="kpi" id="inactiveNewlyActivated"></div>
-            </div>
-            <div class="note" id="inactiveNewlyActivatedNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Net Location Change</div>
-              <div class="kpi" id="inactiveNetChange"></div>
-            </div>
-            <div class="note" id="inactiveNetChangeNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">3-Month Location Forecast</div>
-              <div class="kpi" id="inactiveForecast"></div>
-            </div>
-            <div class="note" id="inactiveForecastNote"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel kpi-group lm" id="lmKpiGroup">
-        <div class="kpi-group-head">
-          <div class="kpi-group-copy">
-            <div class="kpi-group-label">LM Assist</div>
-            <h2 class="kpi-group-title">Operational Handover Performance</h2>
-            <p class="kpi-group-subtitle">Tracks current handover momentum, projected month-end volume and projected revenue using the defined handover price.</p>
-          </div>
-          <div class="kpi-meta" id="lmRevenueMeta"></div>
-        </div>
-        <div class="kpi-grid three">
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Current Month Handovers</div>
-              <div class="kpi" id="lmCount"></div>
-            </div>
-            <div class="note" id="lmCountNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Projected Handovers</div>
-              <div class="kpi" id="lmForecast"></div>
-            </div>
-            <div class="note" id="lmForecastNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">Projected Revenue</div>
-              <div class="kpi" id="lmRevenueForecast"></div>
-            </div>
-            <div class="note" id="lmRevenueForecastNote"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel kpi-group otp" id="otpKpiGroup">
-        <div class="kpi-group-head">
-          <div class="kpi-group-copy">
-            <div class="kpi-group-label">OTP</div>
-            <h2 class="kpi-group-title">Monthly Revenue Steering</h2>
-            <p class="kpi-group-subtitle">Compares the active steering month against target and expected revenue outcome.</p>
-          </div>
-        </div>
-        <div class="kpi-grid two">
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">OTP Revenue Target</div>
-              <div class="kpi" id="otpTarget"></div>
-            </div>
-            <div class="note" id="otpTargetNote"></div>
-          </div>
-          <div class="kpi-card">
-            <div>
-              <div class="eyebrow">OTP Expected Revenue</div>
-              <div class="kpi" id="otpForecast"></div>
-            </div>
-            <div class="note" id="otpForecastNote"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid controls">
-      <div class="panel">
-        <h2 class="section-title">Date Range</h2>
-        <p class="section-subtitle">Click the date field to open the calendar. The selected range filters LM Assist raw records and the OTP monthly view.</p>
-        <div class="date-grid">
-          <div class="field">
-            <label>From</label>
-            <div class="picker-wrap">
-              <input type="date" id="startDate">
-              <button id="startPicker">Calendar</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>To</label>
-            <div class="picker-wrap">
-              <input type="date" id="endDate">
-              <button id="endPicker">Calendar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="panel">
-        <h2 class="section-title">Actions</h2>
-        <p class="section-subtitle">Refresh the current view or export the selected records as an Excel file.</p>
-        <div class="picker-wrap">
-          <button class="primary" id="applyFilter">Apply Filter</button>
-          <button id="exportExcel">Export to Excel</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel" id="inactiveLocationsTrendSection">
-      <div class="chart-toolbar">
-        <div>
-          <h2 class="section-title">Inactive Dealer Locations Trend</h2>
-          <p class="section-subtitle">Monthly view of newly inactive locations, newly activated locations, net location change and inactive share across the selected date range.</p>
-        </div>
-        <div class="kpi-meta" id="inactiveLocationsCoverage"></div>
-      </div>
-      <div class="inactive-chart-grid">
-        <div class="inactive-chart-card">
-          <h3 class="market-ratio-title">Location Movement</h3>
-          <p class="market-ratio-subtitle">Shows whether newly activated dealer locations are offsetting newly inactive locations month by month.</p>
-          <canvas id="inactiveMovementChart" width="620" height="300"></canvas>
-        </div>
-        <div class="inactive-chart-card">
-          <h3 class="market-ratio-title">Inactive Share Trend</h3>
-          <p class="market-ratio-subtitle">Shows inactive location share together with active-base context.</p>
-          <canvas id="inactiveShareTrendChart" width="620" height="300"></canvas>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table id="inactiveLocationsTable">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Active Locations</th>
-              <th>Newly Inactive</th>
-              <th>Newly Activated</th>
-              <th>Net Change</th>
-              <th>Inactive Share</th>
-              <th>MoM Share</th>
-              <th>YoY Active Base</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="grid two-col">
-      <div class="panel" id="budgetRevenuePanel">
-        <div class="chart-toolbar">
-          <div>
-            <h2 class="section-title">Budget: Listings vs Leads</h2>
-            <p class="section-subtitle">Switch between daily, weekly and monthly averages to compare Longtail and Deal listing exposure against the related lead volume. Deal listings come from the daily snapshot file.</p>
-          </div>
-          <div class="toggle-group">
-            <button id="budgetDailyMode">Daily</button>
-            <button id="budgetWowMode">WoW</button>
-            <button class="primary" id="budgetMomMode">MoM</button>
-          </div>
-        </div>
-        <div class="market-ratio-grid">
-          <div class="market-ratio-card">
-            <h3 class="market-ratio-title">Longtail Listings vs Leads</h3>
-            <p class="market-ratio-subtitle">Compares Longtail listing volume with Longtail lead volume and lead rate.</p>
-            <canvas id="longtailRatioChart" width="440" height="260"></canvas>
-            <div class="market-ratio-table">
-              <table id="longtailRatioTable">
-                <thead><tr><th>Period</th><th>Listings</th><th>Leads</th><th>Lead Rate</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="market-ratio-card">
-            <h3 class="market-ratio-title">Deal Listings vs Deal Leads</h3>
-            <p class="market-ratio-subtitle">Compares Deal listing count from Snapshot.xlsx with Deal lead volume.</p>
-            <canvas id="dealRatioChart" width="440" height="260"></canvas>
-            <div class="market-ratio-table">
-              <table id="dealRatioTable">
-                <thead><tr><th>Period</th><th>Listings</th><th>Leads</th><th>Lead Rate</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="note" id="budgetRevenueMeta"></div>
-      </div>
-      <details class="panel disclosure-panel" id="budgetPatternDisclosure">
-        <summary class="disclosure-summary">
-          <span>
-            <span class="section-title">Budget: Pattern Readout and Forecast Signal</span>
-            <span class="section-subtitle">Click to review whether listing reductions have historically coincided with revenue changes.</span>
-          </span>
-          <span class="disclosure-action">Show details</span>
-        </summary>
-        <div class="disclosure-body">
-          <div class="note" id="budgetPatternHeadline"></div>
-          <div class="note" id="budgetPatternSummary" style="margin-top:12px;"></div>
-          <div class="note" id="budgetPatternForecast" style="margin-top:12px;"></div>
-        </div>
-      </details>
-    </section>
-
-    <section class="grid two-col" id="lmTrendSection">
-      <div class="panel">
-        <div class="chart-toolbar">
-          <div>
-            <h2 class="section-title">LM Assist Trend View</h2>
-            <p class="section-subtitle">The dashboard opens in a current-month versus previous-month view. You can switch between WoW and MoM, and any range of eight weeks or more automatically prioritises monthly display. Monthly mode also includes cancellations.</p>
-          </div>
-          <div class="toggle-group">
-            <button class="primary" id="wowMode">WoW</button>
-            <button id="momMode">MoM</button>
-          </div>
-        </div>
-        <canvas id="wowChart" width="920" height="380"></canvas>
-      </div>
-      <div class="panel">
-        <h2 class="section-title">LM Assist Leading Brands</h2>
-        <p class="section-subtitle">Brand distribution is calculated directly from the filtered LM Assist records.</p>
-        <div class="bar-list" id="brandList"></div>
-      </div>
-    </section>
-
-    <section class="grid insight-grid">
-      <details class="panel disclosure-panel">
-        <summary class="disclosure-summary">
-          <span>
-            <span class="section-title">LM Assist Recommendations</span>
-            <span class="section-subtitle">Click to open action-oriented bullet points for the selected period.</span>
-          </span>
-          <span class="disclosure-action">Show details</span>
-        </summary>
-        <div class="disclosure-body">
-          <div style="display:flex;justify-content:flex-end;gap:12px;align-items:center;">
-            <button class="primary" id="lmInsightButton">LM Insights</button>
-          </div>
-          <ul class="insight-list" id="lmInsights"></ul>
-        </div>
-      </details>
-      <details class="panel disclosure-panel">
-        <summary class="disclosure-summary">
-          <span>
-            <span class="section-title">OTP Recommendations</span>
-            <span class="section-subtitle">Click to open management bullet points based on target, expected revenue and product trends.</span>
-          </span>
-          <span class="disclosure-action">Show details</span>
-        </summary>
-        <div class="disclosure-body">
-          <div style="display:flex;justify-content:flex-end;gap:12px;align-items:center;">
-            <button class="primary" id="otpInsightButton">OTP Insights</button>
-          </div>
-          <ul class="insight-list" id="otpInsights"></ul>
-        </div>
-      </details>
-    </section>
-
-    <section class="grid two-col" id="monthlyDetailsSection">
-      <div class="panel">
-        <h2 class="section-title">LM Assist Monthly Detail</h2>
-        <p class="section-subtitle">The monthly view keeps handovers, cancellations, net revenue, price per handover and the current month forecast visible in one place.</p>
-        <div class="table-wrap">
-          <table id="lmMonthTable">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Handovers</th>
-                <th>Cancellations</th>
-                <th>Net Revenue</th>
-                <th>Price / Handover</th>
-                <th>Forecast Handovers</th>
-                <th>Forecast Revenue</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="panel">
-        <h2 class="section-title">OTP Monthly Detail</h2>
-        <p class="section-subtitle">OTP remains on monthly logic. The table shows actual revenue, MoM movement, expected revenue, target and the resulting gap for the selected range.</p>
-        <div class="table-wrap">
-          <table id="otpTable">
-            <thead>
-              <tr>
-                <th>Period</th>
-                <th>Actual 2026</th>
-                <th>MoM</th>
-                <th>Expected Revenue</th>
-                <th>Target 2026</th>
-                <th>Actual 2025</th>
-                <th>Gap vs Target</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-    <div class="ppt-export-stage" id="pptExportStage" aria-hidden="true"></div>
-  </div>
-
-  <script src="assets/html2canvas.min.js"></script>
-  <script src="script.js"></script>
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      statusNode.className = "status";
+      statusNode.textContent = "Unlocking dashboard...";
+      button.disabled = true;
+      try {
+        await unlockDashboard(passwordInput.value);
+      } catch (error) {
+        statusNode.className = "status error";
+        statusNode.textContent = "Password could not unlock the dashboard. Please check the password and try again.";
+        button.disabled = false;
+        passwordInput.select();
+      }
+    });
+  </script>
 </body>
 </html>

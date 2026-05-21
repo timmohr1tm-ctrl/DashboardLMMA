@@ -115,6 +115,11 @@ let DATA = null;
       return `${day}.${month}.${year}`;
     }
 
+    function formatShortDateLabel(dateText) {
+      const [year, month, day] = dateText.split("-");
+      return `${day}.${month}.${year.slice(2)}`;
+    }
+
     function createMonthPeriod(monthKey) {
       return {
         key: monthKey,
@@ -585,7 +590,21 @@ let DATA = null;
     function groupWeekly(rows) {
       const grouped = new Map();
       rows.forEach(row => grouped.set(row.weekKey, (grouped.get(row.weekKey) || 0) + 1));
-      return Array.from(grouped.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([week, value]) => ({ week, value }));
+      return Array.from(grouped.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([week, value]) => ({ key: week, week, label: week, value }));
+    }
+
+    function groupDaily(rows) {
+      const grouped = new Map();
+      rows.forEach(row => {
+        if (!row.date) return;
+        grouped.set(row.date, (grouped.get(row.date) || 0) + 1);
+      });
+      return Array.from(grouped.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([date, value]) => ({
+        key: date,
+        date,
+        label: formatShortDateLabel(date),
+        value
+      }));
     }
 
     function groupMonthly(rows) {
@@ -593,7 +612,7 @@ let DATA = null;
       rows.forEach(row => grouped.set(row.monthKey, (grouped.get(row.monthKey) || 0) + 1));
       return Array.from(grouped.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([month, value]) => {
         const detail = DATA.lm.monthlySeries.find(item => item.month === month) || {};
-        return { month, label: formatMonthLabel(month), value, storno: detail.storno || 0, revenueNet: detail.revenueNet || 0 };
+        return { key: month, month, label: formatMonthLabel(month), value, storno: detail.storno || 0, revenueNet: detail.revenueNet || 0 };
       });
     }
 
@@ -605,6 +624,7 @@ let DATA = null;
 
     function renderChart(series, mode) {
       const canvas = document.getElementById("wowChart");
+      const meta = document.getElementById("lmTrendMeta");
       const ctx = canvas.getContext("2d");
       const dpr = window.devicePixelRatio || 1;
       const width = canvas.clientWidth || 920;
@@ -619,6 +639,16 @@ let DATA = null;
       const values = series.flatMap(item => [item.value, item.storno || 0, item.forecast || 0]);
       const maxValue = Math.max(...values, 1);
       const stepX = innerW / Math.max(series.length - 1, 1);
+      const modeCopy = mode === "daily" ? "Daily view" : mode === "mom" ? "Monthly view" : "Weekly view";
+
+      if (!series.length) {
+        ctx.fillStyle = "rgba(0,0,0,0.62)";
+        ctx.font = "13px Avenir Next, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("No LM Assist handover data is available in the selected range.", 18, 36);
+        if (meta) meta.textContent = "No LM Assist trend data in selected range.";
+        return;
+      }
 
       ctx.strokeStyle = "rgba(0,0,0,0.12)";
       for (let i=0;i<5;i++) {
@@ -629,8 +659,13 @@ let DATA = null;
       const points = series.map((item, idx) => {
         const x = margin.left + stepX * idx;
         const y = margin.top + innerH - ((item.value || 0)/maxValue)*innerH;
-        return { x, y, value: item.value, label: mode === "mom" ? item.label : item.week };
+        return { x, y, value: item.value, label: item.label || item.week || item.key, idx };
       });
+      const peakPoint = points.reduce((best, point) => point.value > best.value ? point : best, points[0]);
+      const denseView = points.length > 18;
+      const highlightIndexes = new Set([0, points.length - 1, peakPoint.idx]);
+      const tickCount = Math.min(denseView ? 7 : 10, points.length);
+      const tickIndexes = new Set(Array.from({ length: tickCount }, (_, idx) => Math.round((idx * (points.length - 1)) / Math.max(tickCount - 1, 1))));
 
       ctx.beginPath();
       points.forEach((point, idx) => {
@@ -642,14 +677,16 @@ let DATA = null;
 
       ctx.fillStyle = "#007AC5";
       points.forEach(point => {
+        if (denseView && !highlightIndexes.has(point.idx)) return;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, denseView ? 4.4 : 4, 0, Math.PI * 2);
         ctx.fill();
       });
 
       ctx.fillStyle = "#000000";
       ctx.font = "12px Avenir Next, sans-serif";
       points.forEach(point => {
+        if (denseView && !highlightIndexes.has(point.idx)) return;
         ctx.textAlign = "center";
         ctx.fillText(amount(point.value, point.value >= 1000), point.x, Math.max(point.y - 10, 18));
       });
@@ -678,7 +715,8 @@ let DATA = null;
         ctx.setLineDash([]);
 
         ctx.fillStyle = "#000000";
-        stornoPoints.forEach(point => {
+        stornoPoints.forEach((point, idx) => {
+          if (denseView && !highlightIndexes.has(idx)) return;
           ctx.beginPath();
           ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
           ctx.fill();
@@ -706,13 +744,23 @@ let DATA = null;
 
       ctx.fillStyle = "rgba(0,0,0,0.62)";
       ctx.font = "12px Avenir Next, sans-serif";
-      points.forEach((point) => {
+      points.forEach((point, idx) => {
+        if (!tickIndexes.has(idx)) return;
         ctx.save();
         ctx.translate(point.x, height - 18);
-        ctx.rotate(-0.35);
+        ctx.rotate(denseView ? -0.42 : -0.32);
+        ctx.textAlign = "right";
         ctx.fillText(mode === "mom" ? point.label : point.label.replace("202", "'"), 0, 0);
         ctx.restore();
       });
+
+      if (meta) {
+        const latest = points[points.length - 1];
+        const cancellationText = mode === "mom"
+          ? " Monthly mode includes cancellations and the current-month forecast."
+          : "";
+        meta.textContent = `${modeCopy} across ${number.format(series.length)} periods. Latest: ${latest.label} with ${number.format(latest.value)} handovers. Peak: ${peakPoint.label} with ${number.format(peakPoint.value)} handovers.${cancellationText}`;
+      }
     }
 
     function renderBudgetRevenueChart(series) {
@@ -1243,13 +1291,40 @@ let DATA = null;
     }
 
     function getSelectedMode() {
-      return document.body.dataset.chartMode || "wow";
+      return document.body.dataset.chartMode || "mom";
     }
 
     function setSelectedMode(mode) {
       document.body.dataset.chartMode = mode;
+      const dailyButton = document.getElementById("dailyMode");
+      if (dailyButton) dailyButton.className = mode === "daily" ? "primary" : "";
       document.getElementById("wowMode").className = mode === "wow" ? "primary" : "";
       document.getElementById("momMode").className = mode === "mom" ? "primary" : "";
+    }
+
+    function ensureLmTrendControls() {
+      const wowButton = document.getElementById("wowMode");
+      const toggleGroup = wowButton?.closest(".toggle-group");
+      if (toggleGroup && !document.getElementById("dailyMode")) {
+        const dailyButton = document.createElement("button");
+        dailyButton.id = "dailyMode";
+        dailyButton.type = "button";
+        dailyButton.textContent = "Daily";
+        toggleGroup.insertBefore(dailyButton, wowButton);
+      }
+
+      const subtitle = document.querySelector("#lmTrendSection .section-subtitle");
+      if (subtitle) {
+        subtitle.textContent = "Switch between Daily handovers, weekly WoW and monthly MoM. Monthly mode also includes cancellations and the current-month forecast.";
+      }
+
+      const chart = document.getElementById("wowChart");
+      if (chart && !document.getElementById("lmTrendMeta")) {
+        const meta = document.createElement("div");
+        meta.className = "note";
+        meta.id = "lmTrendMeta";
+        chart.insertAdjacentElement("afterend", meta);
+      }
     }
 
     function getBudgetChartMode() {
@@ -1431,16 +1506,16 @@ let DATA = null;
       const marketRows = filterMarketDailyRows();
       const inactiveRows = filterInactiveLocationRows();
       const marketSeries = aggregateMarketSeries(marketRows, getBudgetChartMode());
+      const days = groupDaily(lmRows);
       const weeks = groupWeekly(lmRows);
       const months = groupMonthly(lmRows).map((item, index, arr) => ({
         ...item,
         forecast: index === arr.length - 1 ? DATA.lm.forecast.currentMonthForecast : 0
       }));
-      const autoMode = weeks.length >= 8 ? "mom" : getSelectedMode();
-      const renderMode = getSelectedMode() === "mom" ? "mom" : autoMode;
-      document.getElementById("wowMode").className = renderMode === "wow" ? "primary" : "";
-      document.getElementById("momMode").className = renderMode === "mom" ? "primary" : "";
-      renderChart(renderMode === "mom" ? months : weeks, renderMode);
+      const renderMode = getSelectedMode();
+      setSelectedMode(renderMode);
+      const lmTrendSeries = renderMode === "daily" ? days : renderMode === "mom" ? months : weeks;
+      renderChart(lmTrendSeries, renderMode);
       renderBudgetRevenueChart(marketSeries);
       renderBudgetPattern(marketRows);
       renderInactiveLocations(inactiveRows);
@@ -1919,6 +1994,7 @@ let DATA = null;
     }
 
     function init() {
+      ensureLmTrendControls();
       setSelectedMode("mom");
       setBudgetChartMode("mom");
       const end = DATA.lm.maxDate;
@@ -1947,6 +2023,7 @@ let DATA = null;
       });
       document.getElementById("lmInsightButton").addEventListener("click", () => renderLmInsights(filterLmRows()));
       document.getElementById("otpInsightButton").addEventListener("click", () => renderOtpInsights(filterOtpRows()));
+      document.getElementById("dailyMode").addEventListener("click", () => { setSelectedMode("daily"); updateView(); });
       document.getElementById("wowMode").addEventListener("click", () => { setSelectedMode("wow"); updateView(); });
       document.getElementById("momMode").addEventListener("click", () => { setSelectedMode("mom"); updateView(); });
       document.getElementById("budgetDailyMode").addEventListener("click", () => { setBudgetChartMode("daily"); updateView(); });
