@@ -1959,8 +1959,8 @@ let DATA = null;
       if (DATA) updateView();
     });
 
-    async function loadDashboardData() {
-      const response = await fetch("data.json", { cache: "no-store" });
+    async function loadDashboardData(cacheBust = false) {
+      const response = await fetch(`data.json${cacheBust ? `?v=${Date.now()}` : ""}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`Could not load data.json (${response.status})`);
       DATA = await response.json();
       init();
