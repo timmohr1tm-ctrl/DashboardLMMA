@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Management Performance Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="executive-head">
+      <div>
+        <h1 class="page-title">Management Performance Dashboard</h1>
+        <p class="page-subtitle">Executive view across Budget Exposure, LM Assist and OTP. The first row highlights the current status, risk level and revenue steering points for fast management decisions.</p>
+      </div>
+      <div class="status-pill">Updated · 20.05.2026 13:44</div>
+    </header>
+
+    <section class="panel ppt-export-toolbar">
+      <div>
+        <div class="kpi-group-label">PowerPoint Export</div>
+        <h2 class="section-title">Create a compact PowerPoint PNG</h2>
+        <p class="section-subtitle">Select a predefined dashboard area and download a tightly cropped image for direct copy/paste use in PowerPoint.</p>
+      </div>
+      <div class="ppt-export-controls">
+        <select class="ppt-export-select" id="pptExportArea" aria-label="PowerPoint export area">
+          <option value="executive-snapshot">Executive KPI Snapshot</option>
+          <option value="search-result">Search / Dynamic Comparison Result</option>
+          <option value="search-kpis">Search / Dynamic Comparison KPI Cards</option>
+          <option value="search-table">Search / Dynamic Comparison Table</option>
+          <option value="budget-kpis">Budget KPI Group</option>
+          <option value="inactive-kpis">Inactive Dealer Locations KPI Group</option>
+          <option value="lm-kpis">LM Assist KPI Group</option>
+          <option value="otp-kpis">OTP KPI Group</option>
+          <option value="budget-chart">Budget: Listings vs Leads Chart</option>
+          <option value="inactive-trend">Inactive Dealer Locations Trend</option>
+          <option value="lm-trend">LM Assist Trend View</option>
+          <option value="monthly-details">Monthly Detail Tables</option>
+        </select>
+        <button class="primary" id="pptExportButton" type="button">Download PowerPoint PNG</button>
+      </div>
+    </section>
+
+    <section class="panel command-panel">
+      <div class="command-head">
+        <div class="command-copy">
+          <div class="kpi-group-label">Executive Search</div>
+          <h2 class="section-title">Ask for a Period or KPI Comparison</h2>
+          <p class="section-subtitle">Use natural language to compare months, quarters or years without manually setting filters. Examples: March 2025 vs March 2026, 2025 vs 2026, Q1 25 vs Q1 26.</p>
+        </div>
+        <div class="status-pill">Beta · Period comparisons</div>
+      </div>
+      <div class="command-row">
+        <input class="command-input" id="executiveSearchInput" type="search" placeholder="Example: Show me the development from March 2025 vs March 2026">
+        <button class="primary" id="executiveSearchButton" type="button">Analyze</button>
+      </div>
+      <div class="command-chips">
+        <button class="command-chip" type="button" data-query="Compare March 2025 with March 2026">March 2025 vs March 2026</button>
+        <button class="command-chip" type="button" data-query="Compare 2025 with 2026">2025 vs 2026</button>
+        <button class="command-chip" type="button" data-query="Compare first quarter 25 with first quarter 26">Q1 25 vs Q1 26</button>
+        <button class="command-chip" type="button" data-query="Compare April 2025 with April 2026">April 2025 vs April 2026</button>
+        <button class="command-chip" type="button" data-query="Show May 2026">May 2026</button>
+      </div>
+      <div class="command-result" id="executiveSearchResult" hidden></div>
+    </section>
+
+    <section class="grid executive-snapshot" id="executiveSnapshot">
+      <div class="panel kpi-card snapshot-card critical">
+        <div class="snapshot-label">Critical Exposure</div>
+        <div class="snapshot-value" id="snapshotBudgetLoss"></div>
+        <div class="note" id="snapshotBudgetLossNote"></div>
+      </div>
+      <div class="panel kpi-card snapshot-card attention">
+        <div class="snapshot-label">Budget Offline Dealers</div>
+        <div class="snapshot-value" id="snapshotOfflineDealers"></div>
+        <div class="note" id="snapshotOfflineDealersNote"></div>
+      </div>
+      <div class="panel kpi-card snapshot-card positive">
+        <div class="snapshot-label">LM Assist Revenue Forecast</div>
+        <div class="snapshot-value" id="snapshotLmRevenue"></div>
+        <div class="note" id="snapshotLmRevenueNote"></div>
+      </div>
+      <div class="panel kpi-card snapshot-card critical">
+        <div class="snapshot-label">OTP Gap To Target</div>
+        <div class="snapshot-value" id="snapshotOtpGap"></div>
+        <div class="note" id="snapshotOtpGapNote"></div>
+      </div>
+    </section>
+
+    <section class="grid kpi-groups">
+      <div class="panel kpi-group budget" id="budgetKpiGroup">
+        <div class="kpi-group-head">
+          <div class="kpi-group-copy">
+            <div class="kpi-group-label">Budget Exposure</div>
+            <h2 class="kpi-group-title">Budget-Driven Marketplace Exposure</h2>
+            <p class="kpi-group-subtitle">Shows confirmed offline dealers, dealers close to budget exhaustion and the resulting visibility impact on live listings.</p>
+          </div>
+          <div class="kpi-meta" id="budgetMeta">Live listing reference refreshed at generation time · 20.05.2026 13:44</div>
+        </div>
+        <div class="kpi-grid seven">
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Offline Dealers Today</div>
+              <div class="kpi" id="budgetOfflineDealers"></div>
+            </div>
+            <div class="note" id="budgetOfflineDealersNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Dealers Near Budget Limit</div>
+              <div class="kpi" id="budgetNearLimitDealers"></div>
+            </div>
+            <div class="note" id="budgetNearLimitDealersNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Active Listings (File)</div>
+              <div class="kpi" id="budgetActiveListings"></div>
+            </div>
+            <div class="note" id="budgetActiveListingsNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Displayed Listings (Live)</div>
+              <div class="kpi" id="budgetDisplayedListings"></div>
+            </div>
+            <div class="note" id="budgetDisplayedListingsNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Offline Listings</div>
+              <div class="kpi" id="budgetOfflineListings"></div>
+            </div>
+            <div class="note" id="budgetOfflineListingsNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Offline Share of Live Listings</div>
+              <div class="kpi" id="budgetListingLossPct"></div>
+            </div>
+            <div class="note" id="budgetListingLossPctNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">3-Day Dealer Risk</div>
+              <div class="kpi" id="budgetRisk3Days"></div>
+            </div>
+            <div class="note" id="budgetRisk3DaysNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel kpi-group inactive" id="inactiveKpiGroup">
+        <div class="kpi-group-head">
+          <div class="kpi-group-copy">
+            <div class="kpi-group-label">Inactive Dealer Locations</div>
+            <h2 class="kpi-group-title">Dealer Location Churn and Reactivation</h2>
+            <p class="kpi-group-subtitle">Compares active dealer locations with newly inactive and newly reactivated locations to show monthly churn pressure.</p>
+          </div>
+          <div class="kpi-meta" id="inactiveLocationsMeta"></div>
+        </div>
+        <div class="kpi-grid five">
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Inactive Location Share</div>
+              <div class="kpi" id="inactiveShare"></div>
+            </div>
+            <div class="note" id="inactiveShareNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Newly Inactive Locations</div>
+              <div class="kpi" id="inactiveNewlyInactive"></div>
+            </div>
+            <div class="note" id="inactiveNewlyInactiveNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Newly Activated Locations</div>
+              <div class="kpi" id="inactiveNewlyActivated"></div>
+            </div>
+            <div class="note" id="inactiveNewlyActivatedNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Net Location Change</div>
+              <div class="kpi" id="inactiveNetChange"></div>
+            </div>
+            <div class="note" id="inactiveNetChangeNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">3-Month Location Forecast</div>
+              <div class="kpi" id="inactiveForecast"></div>
+            </div>
+            <div class="note" id="inactiveForecastNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel kpi-group lm" id="lmKpiGroup">
+        <div class="kpi-group-head">
+          <div class="kpi-group-copy">
+            <div class="kpi-group-label">LM Assist</div>
+            <h2 class="kpi-group-title">Operational Handover Performance</h2>
+            <p class="kpi-group-subtitle">Tracks current handover momentum, projected month-end volume and projected revenue using the defined handover price.</p>
+          </div>
+          <div class="kpi-meta" id="lmRevenueMeta"></div>
+        </div>
+        <div class="kpi-grid three">
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Current Month Handovers</div>
+              <div class="kpi" id="lmCount"></div>
+            </div>
+            <div class="note" id="lmCountNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Projected Handovers</div>
+              <div class="kpi" id="lmForecast"></div>
+            </div>
+            <div class="note" id="lmForecastNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">Projected Revenue</div>
+              <div class="kpi" id="lmRevenueForecast"></div>
+            </div>
+            <div class="note" id="lmRevenueForecastNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel kpi-group otp" id="otpKpiGroup">
+        <div class="kpi-group-head">
+          <div class="kpi-group-copy">
+            <div class="kpi-group-label">OTP</div>
+            <h2 class="kpi-group-title">Monthly Revenue Steering</h2>
+            <p class="kpi-group-subtitle">Compares the active steering month against target and expected revenue outcome.</p>
+          </div>
+        </div>
+        <div class="kpi-grid two">
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">OTP Revenue Target</div>
+              <div class="kpi" id="otpTarget"></div>
+            </div>
+            <div class="note" id="otpTargetNote"></div>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="eyebrow">OTP Expected Revenue</div>
+              <div class="kpi" id="otpForecast"></div>
+            </div>
+            <div class="note" id="otpForecastNote"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="inactiveLocationsTrendSection">
+      <div class="chart-toolbar">
+        <div>
+          <h2 class="section-title">Inactive Dealer Locations Trend</h2>
+          <p class="section-subtitle">Monthly view of newly inactive locations, newly activated locations, net location change and inactive share across the selected date range.</p>
+        </div>
+        <div class="kpi-meta" id="inactiveLocationsCoverage"></div>
+      </div>
+      <div class="inactive-chart-grid">
+        <div class="inactive-chart-card">
+          <h3 class="market-ratio-title">Location Movement</h3>
+          <p class="market-ratio-subtitle">Shows whether newly activated dealer locations are offsetting newly inactive locations month by month.</p>
+          <canvas id="inactiveMovementChart" width="620" height="300"></canvas>
+        </div>
+        <div class="inactive-chart-card">
+          <h3 class="market-ratio-title">Inactive Share Trend</h3>
+          <p class="market-ratio-subtitle">Shows inactive location share together with active-base context.</p>
+          <canvas id="inactiveShareTrendChart" width="620" height="300"></canvas>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="inactiveLocationsTable">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Active Locations</th>
+              <th>Newly Inactive</th>
+              <th>Newly Activated</th>
+              <th>Net Change</th>
+              <th>Inactive Share</th>
+              <th>MoM Share</th>
+              <th>YoY Active Base</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid two-col">
+      <div class="panel" id="budgetRevenuePanel">
+        <div class="chart-toolbar">
+          <div>
+            <h2 class="section-title">Budget: Listings vs Leads</h2>
+            <p class="section-subtitle">Switch between daily, weekly and monthly averages to compare Longtail and Deal listing exposure against the related lead volume. Deal listings come from the daily snapshot file.</p>
+          </div>
+          <div class="toggle-group">
+            <button id="budgetDailyMode">Daily</button>
+            <button id="budgetWowMode">WoW</button>
+            <button class="primary" id="budgetMomMode">MoM</button>
+          </div>
+        </div>
+        <div class="market-ratio-grid">
+          <div class="market-ratio-card">
+            <h3 class="market-ratio-title">Longtail Listings vs Leads</h3>
+            <p class="market-ratio-subtitle">Compares Longtail listing volume with Longtail lead volume and lead rate.</p>
+            <canvas id="longtailRatioChart" width="440" height="260"></canvas>
+            <div class="market-ratio-table">
+              <table id="longtailRatioTable">
+                <thead><tr><th>Period</th><th>Listings</th><th>Leads</th><th>Lead Rate</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="market-ratio-card">
+            <h3 class="market-ratio-title">Deal Listings vs Deal Leads</h3>
+            <p class="market-ratio-subtitle">Compares Deal listing count from Snapshot.xlsx with Deal lead volume.</p>
+            <canvas id="dealRatioChart" width="440" height="260"></canvas>
+            <div class="market-ratio-table">
+              <table id="dealRatioTable">
+                <thead><tr><th>Period</th><th>Listings</th><th>Leads</th><th>Lead Rate</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="note" id="budgetRevenueMeta"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Budget: Pattern Readout and Forecast Signal</h2>
+        <p class="section-subtitle">This section tests whether listing reductions have historically coincided with revenue changes and only surfaces a forecast message when the signal is strong enough to be usable.</p>
+        <div class="note" id="budgetPatternHeadline"></div>
+        <div class="note" id="budgetPatternSummary" style="margin-top:12px;"></div>
+        <div class="note" id="budgetPatternForecast" style="margin-top:12px;"></div>
+      </div>
+    </section>
+
+    <section class="grid controls">
+      <div class="panel">
+        <h2 class="section-title">Date Range</h2>
+        <p class="section-subtitle">Click the date field to open the calendar. The selected range filters LM Assist raw records and the OTP monthly view.</p>
+        <div class="date-grid">
+          <div class="field">
+            <label>From</label>
+            <div class="picker-wrap">
+              <input type="date" id="startDate">
+              <button id="startPicker">Calendar</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>To</label>
+            <div class="picker-wrap">
+              <input type="date" id="endDate">
+              <button id="endPicker">Calendar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Actions</h2>
+        <p class="section-subtitle">Refresh the current view or export the selected records as an Excel file.</p>
+        <div class="picker-wrap">
+          <button class="primary" id="applyFilter">Apply Filter</button>
+          <button id="exportExcel">Export to Excel</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid two-col" id="lmTrendSection">
+      <div class="panel">
+        <div class="chart-toolbar">
+          <div>
+            <h2 class="section-title">LM Assist Trend View</h2>
+            <p class="section-subtitle">The dashboard opens in a current-month versus previous-month view. You can switch between WoW and MoM, and any range of eight weeks or more automatically prioritises monthly display. Monthly mode also includes cancellations.</p>
+          </div>
+          <div class="toggle-group">
+            <button class="primary" id="wowMode">WoW</button>
+            <button id="momMode">MoM</button>
+          </div>
+        </div>
+        <canvas id="wowChart" width="920" height="380"></canvas>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">LM Assist Leading Brands</h2>
+        <p class="section-subtitle">Brand distribution is calculated directly from the filtered LM Assist records.</p>
+        <div class="bar-list" id="brandList"></div>
+      </div>
+    </section>
+
+    <section class="grid insight-grid">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+          <div>
+            <h2 class="section-title">LM Assist Recommendations</h2>
+            <p class="section-subtitle">Click to generate five action-oriented bullet points for the currently selected period.</p>
+          </div>
+          <button class="primary" id="lmInsightButton">LM Insights</button>
+        </div>
+        <ul class="insight-list" id="lmInsights"></ul>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+          <div>
+            <h2 class="section-title">OTP Recommendations</h2>
+            <p class="section-subtitle">Click to generate five management bullet points based on target, expected revenue, prior year and product trends.</p>
+          </div>
+          <button class="primary" id="otpInsightButton">OTP Insights</button>
+        </div>
+        <ul class="insight-list" id="otpInsights"></ul>
+      </div>
+    </section>
+
+    <section class="grid two-col" id="monthlyDetailsSection">
+      <div class="panel">
+        <h2 class="section-title">LM Assist Monthly Detail</h2>
+        <p class="section-subtitle">The monthly view keeps handovers, cancellations, net revenue, price per handover and the current month forecast visible in one place.</p>
+        <div class="table-wrap">
+          <table id="lmMonthTable">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Handovers</th>
+                <th>Cancellations</th>
+                <th>Net Revenue</th>
+                <th>Price / Handover</th>
+                <th>Forecast Handovers</th>
+                <th>Forecast Revenue</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">OTP Monthly Detail</h2>
+        <p class="section-subtitle">OTP remains on monthly logic. The table shows actual revenue, MoM movement, expected revenue, target and the resulting gap for the selected range.</p>
+        <div class="table-wrap">
+          <table id="otpTable">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Actual 2026</th>
+                <th>MoM</th>
+                <th>Expected Revenue</th>
+                <th>Target 2026</th>
+                <th>Actual 2025</th>
+                <th>Gap vs Target</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <div class="ppt-export-stage" id="pptExportStage" aria-hidden="true"></div>
+  </div>
+
+  <script src="assets/html2canvas.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

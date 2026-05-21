@@ -1,0 +1,622 @@
+:root {
+      --ocean: #007AC5;
+      --shallow-ocean: #97D7FE;
+      --as24-yellow: #FFF200;
+      --lagoon: #59D7BB;
+      --black: #000000;
+      --white: #FFFFFF;
+      --bg: #FFFFFF;
+      --panel: #FFFFFF;
+      --panel-soft: #FFFFFF;
+      --text: #000000;
+      --muted: rgba(0, 0, 0, 0.62);
+      --line: rgba(0, 0, 0, 0.14);
+      --blue: #007AC5;
+      --teal: #59D7BB;
+      --amber: #FFF200;
+      --red: #000000;
+      --green: #59D7BB;
+      --shadow: 0 14px 38px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--text);
+      background: var(--white);
+    }
+    .page { max-width: 1480px; margin: 0 auto; padding: 22px 20px 72px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .note { color: var(--muted); line-height: 1.45; font-size: 0.9rem; }
+    .panel { padding: 20px; }
+    .grid { display: grid; gap: 16px; }
+    .executive-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+    .page-title {
+      margin: 0 0 4px;
+      font-size: clamp(1.55rem, 2.4vw, 2.4rem);
+      letter-spacing: 0;
+      font-weight: 750;
+    }
+    .page-subtitle { margin: 0; color: var(--muted); line-height: 1.45; max-width: 840px; }
+    .status-pill {
+      white-space: nowrap;
+      border: 1px solid var(--line);
+      background: var(--white);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+    .ppt-export-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .ppt-export-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .ppt-export-select {
+      min-width: 280px;
+      padding: 11px 13px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+    .ppt-export-stage {
+      position: fixed;
+      left: -10000px;
+      top: 0;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      background: var(--white);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .ppt-export-frame {
+      width: 1500px;
+      min-height: 0;
+      height: auto;
+      padding: 10px;
+      background: var(--white);
+      color: var(--text);
+      overflow: visible;
+      display: block;
+    }
+    .ppt-export-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+      margin-bottom: 2px;
+    }
+    .ppt-export-title h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.08;
+      font-weight: 760;
+    }
+    .ppt-export-title p { margin: 6px 0 0; color: var(--muted); font-size: 18px; }
+    .ppt-compact {
+      box-shadow: none !important;
+      transform-origin: top left;
+      width: 100%;
+    }
+    .ppt-compact.ppt-area-executive-snapshot,
+    .ppt-compact.ppt-area-search-kpis,
+    .ppt-compact.ppt-area-budget-kpis,
+    .ppt-compact.ppt-area-inactive-kpis,
+    .ppt-compact.ppt-area-lm-kpis,
+    .ppt-compact.ppt-area-otp-kpis {
+      width: max-content !important;
+      max-width: 1500px !important;
+    }
+    .ppt-compact .panel {
+      box-shadow: none !important;
+      border-radius: 2px !important;
+      padding: 10px !important;
+    }
+    .ppt-compact .grid { gap: 8px !important; }
+    .ppt-compact .executive-snapshot { margin-bottom: 0 !important; }
+    .ppt-compact .snapshot-card, .ppt-compact .kpi-card {
+      width: 345px !important;
+      max-width: 345px !important;
+      min-height: 104px !important;
+      padding: 10px 12px !important;
+      border-radius: 2px !important;
+      box-shadow: none !important;
+    }
+    .ppt-compact .snapshot-value, .ppt-compact .kpi { font-size: 31px !important; margin: 3px 0 4px !important; }
+    .ppt-compact .snapshot-label, .ppt-compact .eyebrow, .ppt-compact .kpi-group-label { font-size: 11px !important; margin-bottom: 4px !important; }
+    .ppt-compact .note, .ppt-compact .section-subtitle, .ppt-compact .kpi-group-subtitle { font-size: 12px !important; line-height: 1.2 !important; margin-bottom: 6px !important; }
+    .ppt-compact .section-title, .ppt-compact .kpi-group-title { font-size: 19px !important; margin-bottom: 4px !important; }
+    .ppt-compact .kpi-group { gap: 8px !important; padding: 10px !important; margin-bottom: 0 !important; border-radius: 2px !important; }
+    .ppt-compact.ppt-area-budget-kpis .kpi-group,
+    .ppt-compact.ppt-area-inactive-kpis .kpi-group,
+    .ppt-compact.ppt-area-lm-kpis .kpi-group,
+    .ppt-compact.ppt-area-otp-kpis .kpi-group {
+      width: max-content !important;
+      max-width: 1500px !important;
+    }
+    .ppt-compact.ppt-area-budget-kpis .kpi-group-head,
+    .ppt-compact.ppt-area-inactive-kpis .kpi-group-head,
+    .ppt-compact.ppt-area-lm-kpis .kpi-group-head,
+    .ppt-compact.ppt-area-otp-kpis .kpi-group-head {
+      display: none !important;
+    }
+    .ppt-compact .kpi-grid { gap: 8px !important; }
+    .ppt-compact .executive-snapshot { grid-template-columns: repeat(4, 345px) !important; width: max-content !important; }
+    .ppt-compact .kpi-grid.seven { grid-template-columns: repeat(4, 345px) !important; }
+    .ppt-compact .kpi-grid.five { grid-template-columns: repeat(3, 345px) !important; }
+    .ppt-compact .kpi-grid.four { grid-template-columns: repeat(4, 345px) !important; }
+    .ppt-compact .kpi-grid.three { grid-template-columns: repeat(3, 345px) !important; }
+    .ppt-compact .kpi-grid.two { grid-template-columns: repeat(2, 345px) !important; }
+    .ppt-compact .compare-summary { gap: 10px !important; margin: 10px 0 !important; }
+    .ppt-compact.ppt-area-search-kpis .compare-summary {
+      grid-template-columns: repeat(3, 345px) !important;
+      width: max-content !important;
+      margin: 0 !important;
+    }
+    .ppt-compact .compare-card {
+      width: 345px !important;
+      max-width: 345px !important;
+      min-height: 104px !important;
+      padding: 10px 12px !important;
+      border-radius: 2px !important;
+      box-shadow: none !important;
+    }
+    .ppt-compact .compare-card strong { font-size: 24px !important; margin-top: 4px !important; }
+    .ppt-compact table { min-width: 0 !important; font-size: 13px !important; }
+    .ppt-compact th, .ppt-compact td { padding: 7px 8px !important; }
+    .ppt-compact.ppt-area-search-result .table-wrap,
+    .ppt-compact.ppt-area-search-table .table-wrap {
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      border-radius: 2px !important;
+      border: 1px solid var(--line) !important;
+    }
+    .ppt-compact.ppt-area-search-table {
+      width: max-content !important;
+      max-width: 1500px !important;
+    }
+    .ppt-compact.ppt-area-search-table table {
+      width: auto !important;
+      min-width: 980px !important;
+      border-collapse: collapse !important;
+      font-size: 12px !important;
+    }
+    .ppt-compact.ppt-area-search-table th,
+    .ppt-compact.ppt-area-search-table td,
+    .ppt-compact.ppt-area-search-result th,
+    .ppt-compact.ppt-area-search-result td {
+      padding: 5px 7px !important;
+      line-height: 1.16 !important;
+      white-space: nowrap !important;
+    }
+    .ppt-compact canvas, .ppt-compact img.chart-export-image { width: 100% !important; height: 520px !important; object-fit: contain; }
+    .ppt-compact .market-ratio-card canvas,
+    .ppt-compact .market-ratio-card img.chart-export-image { height: 260px !important; }
+    .ppt-compact .market-ratio-table table { font-size: 12px !important; }
+    .ppt-compact.ppt-area-inactive-trend .inactive-chart-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+    .ppt-compact.ppt-area-inactive-trend .inactive-chart-card {
+      padding: 10px !important;
+      border-radius: 2px !important;
+    }
+    .ppt-compact.ppt-area-inactive-trend canvas,
+    .ppt-compact.ppt-area-inactive-trend img.chart-export-image {
+      height: 260px !important;
+    }
+    .ppt-compact.ppt-area-inactive-trend table {
+      font-size: 11px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart {
+      width: 1300px !important;
+      max-width: 1300px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .panel {
+      padding: 10px !important;
+      border-radius: 2px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .chart-toolbar {
+      margin-bottom: 8px !important;
+      align-items: flex-start !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .section-title {
+      font-size: 20px !important;
+      margin-bottom: 0 !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .section-subtitle {
+      display: none !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-card {
+      padding: 9px !important;
+      border-radius: 2px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-title {
+      font-size: 16px !important;
+      margin-bottom: 2px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-subtitle {
+      display: none !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-card canvas,
+    .ppt-compact.ppt-area-budget-chart .market-ratio-card img.chart-export-image {
+      height: 190px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table {
+      margin-top: 4px !important;
+      border-radius: 2px !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table table {
+      width: 100% !important;
+      table-layout: fixed !important;
+      font-size: 10.5px !important;
+      min-width: 0 !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table th,
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table td {
+      padding: 4px 6px !important;
+      line-height: 1.08 !important;
+      white-space: nowrap !important;
+      text-align: right !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table th:first-child,
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table td:first-child {
+      text-align: left !important;
+      width: 22% !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table th:nth-child(2),
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table td:nth-child(2),
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table th:nth-child(3),
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table td:nth-child(3) {
+      width: 25% !important;
+    }
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table th:nth-child(4),
+    .ppt-compact.ppt-area-budget-chart .market-ratio-table td:nth-child(4) {
+      width: 28% !important;
+    }
+    .ppt-compact.ppt-area-budget-chart #budgetRevenueMeta,
+    .ppt-compact.ppt-area-budget-chart .note {
+      display: none !important;
+    }
+    .budget-export-panel {
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 10px;
+      background: var(--white);
+    }
+    .budget-export-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .budget-export-heading h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.05;
+      font-weight: 780;
+    }
+    .budget-export-badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .budget-export-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .budget-export-card {
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 9px;
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+    .budget-export-card h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      line-height: 1.05;
+      font-weight: 780;
+    }
+    .budget-export-chart {
+      display: block;
+      width: 100%;
+      height: 190px;
+      margin-bottom: 4px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+    }
+    .budget-export-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: var(--white);
+      border: 1px solid var(--line);
+      font-size: 10.5px;
+    }
+    .budget-export-table th,
+    .budget-export-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      line-height: 1.08;
+      white-space: nowrap;
+    }
+    .budget-export-table th:first-child,
+    .budget-export-table td:first-child {
+      text-align: left;
+      width: 22%;
+    }
+    .budget-export-table th {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 780;
+    }
+    .budget-export-footnote {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 10.5px;
+      line-height: 1.25;
+    }
+    .chart-export-fallback {
+      min-height: 260px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(151, 215, 254, 0.12);
+      text-align: center;
+      padding: 24px;
+      font-weight: 650;
+    }
+    .ppt-compact .toggle-group, .ppt-compact .command-row, .ppt-compact .command-chips, .ppt-compact .picker-wrap { display: none !important; }
+    .ppt-compact .table-wrap { overflow: visible !important; }
+    .executive-snapshot {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 16px;
+    }
+    .snapshot-card {
+      min-height: 132px;
+      border-left: 4px solid var(--line);
+    }
+    .snapshot-card.critical { border-left-color: var(--amber); }
+    .snapshot-card.positive { border-left-color: var(--green); color: inherit; }
+    .snapshot-card.attention { border-left-color: var(--blue); }
+    .snapshot-value {
+      font-size: clamp(1.75rem, 2.5vw, 2.55rem);
+      line-height: 1.05;
+      font-weight: 760;
+      margin: 8px 0;
+      overflow-wrap: anywhere;
+    }
+    .snapshot-label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; font-weight: 750; }
+    .command-panel { margin-bottom: 16px; }
+    .command-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 18px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .command-copy { max-width: 860px; }
+    .command-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+    .command-input {
+      width: 100%;
+      padding: 13px 15px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      font: inherit;
+      box-shadow: inset 0 1px 0 rgba(0,0,0,0.03);
+    }
+    .command-input::placeholder { color: rgba(0, 0, 0, 0.45); }
+    .command-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .command-chip { padding: 8px 10px; border-radius: 999px; font-size: 0.86rem; color: var(--muted); background: var(--panel-soft); }
+    .command-result { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .command-result[hidden] { display: none; }
+    .compare-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+    .compare-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+    .compare-card strong { display: block; font-size: clamp(1.18rem, 1.7vw, 1.55rem); margin-top: 6px; overflow-wrap: anywhere; }
+    .compare-card span { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 760; }
+    .controls { grid-template-columns: 1fr auto; align-items: end; margin-bottom: 16px; }
+    .kpi-groups { margin-bottom: 16px; }
+    .kpi-group {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-group:last-child { margin-bottom: 0; }
+    .kpi-group::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--blue);
+      opacity: 0.9;
+    }
+    .kpi-group.budget::before { background: var(--as24-yellow); }
+    .kpi-group.inactive::before { background: var(--black); }
+    .kpi-group.lm::before { background: var(--ocean); }
+    .kpi-group.otp::before { background: var(--lagoon); }
+    .kpi-group-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+    .kpi-group-copy { max-width: 860px; }
+    .kpi-group-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.76rem;
+      font-weight: 760;
+      margin-bottom: 8px;
+    }
+    .kpi-group-title {
+      margin: 0 0 8px;
+      font-size: clamp(1.18rem, 1.7vw, 1.58rem);
+      font-weight: 760;
+    }
+    .kpi-group-subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+    .kpi-meta {
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .kpi-grid { display: grid; gap: 14px; }
+    .kpi-grid.seven { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .kpi-grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .kpi-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi-card {
+      background: var(--panel-soft);
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 146px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .two-col { grid-template-columns: minmax(0, 1.16fr) minmax(360px, 0.84fr); margin-bottom: 16px; }
+    .insight-grid { grid-template-columns: 1fr 1fr; margin-bottom: 16px; }
+    .eyebrow { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem; font-weight: 760; margin-bottom: 10px; }
+    .kpi {
+      font-size: clamp(1.6rem, 2.1vw, 2.45rem);
+      line-height: 1.08;
+      font-weight: 760;
+      margin-bottom: 8px;
+      overflow-wrap: anywhere;
+    }
+    .section-title { margin: 0 0 8px; font-size: 1.1rem; font-weight: 760; }
+    .section-subtitle { margin: 0 0 16px; color: var(--muted); line-height: 1.55; font-size: 0.95rem; }
+    .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    .picker-wrap { display: flex; gap: 8px; }
+    input[type="date"] {
+      width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: white;
+      font: inherit; color: var(--text);
+    }
+    button {
+      border: 1px solid var(--line); background: white; border-radius: 10px; padding: 11px 13px; font: inherit; cursor: pointer;
+    }
+    .primary { background: var(--blue); color: white; border-color: var(--blue); }
+    canvas { width: 100%; height: 380px; display: block; }
+    .market-ratio-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .market-ratio-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+    .market-ratio-title {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+      font-weight: 760;
+    }
+    .market-ratio-subtitle {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+    .market-ratio-card canvas { height: 260px; }
+    .market-ratio-table { margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .market-ratio-table table { width: 100%; min-width: 0; table-layout: fixed; font-size: 0.76rem; }
+    .market-ratio-table th, .market-ratio-table td { padding: 7px 7px; white-space: nowrap; text-align: right; }
+    .market-ratio-table th:first-child, .market-ratio-table td:first-child { text-align: left; width: 23%; }
+    .market-ratio-table th:nth-child(2), .market-ratio-table td:nth-child(2),
+    .market-ratio-table th:nth-child(3), .market-ratio-table td:nth-child(3) { width: 25%; }
+    .market-ratio-table th:nth-child(4), .market-ratio-table td:nth-child(4) { width: 27%; }
+    .bar-list { display: grid; gap: 12px; }
+    .chart-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bar-row { display: grid; gap: 6px; }
+    .bar-head { display: flex; justify-content: space-between; gap: 12px; font-size: 0.95rem; }
+    .bar-track { height: 12px; background: rgba(151, 215, 254, 0.45); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--ocean); border-radius: 999px; }
+    .bar-fill.alt { background: var(--lagoon); }
+    .inactive-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+    .inactive-chart-card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: var(--panel-soft); min-width: 0; }
+    .inactive-chart-card canvas { height: 300px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 760px; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); text-transform: uppercase; font-size: 0.74rem; letter-spacing: 0.04em; }
+    .positive { color: var(--ocean); font-weight: 700; }
+    .negative { color: var(--black); font-weight: 700; background: rgba(255, 242, 0, 0.45); border-radius: 4px; }
+    .neutral { color: var(--muted); font-weight: 700; }
+    .insight-list { margin: 0; padding-left: 18px; display: grid; gap: 10px; line-height: 1.55; }
+    .insight-list li { color: var(--text); }
+    @media (max-width: 1100px) {
+      .executive-snapshot, .compare-summary, .two-col, .controls, .command-row, .ppt-export-toolbar, .date-grid, .insight-grid, .inactive-chart-grid, .kpi-grid.seven, .kpi-grid.five, .kpi-grid.four, .kpi-grid.three, .kpi-grid.two { grid-template-columns: 1fr; }
+      .executive-head { align-items: start; flex-direction: column; }
+      .kpi-group-head { align-items: start; }
+      .kpi-meta { white-space: normal; }
+      canvas { height: 340px; }
+      .market-ratio-grid { grid-template-columns: 1fr; }
+      .market-ratio-card canvas { height: 250px; }
+    }
+    @media (min-width: 1101px) and (max-width: 1380px) {
+      .kpi-grid.seven { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
