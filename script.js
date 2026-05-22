@@ -2040,6 +2040,9 @@ let DATA = null;
       const response = await fetch(`data.json${cacheBust ? `?v=${Date.now()}` : ""}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`Could not load data.json (${response.status})`);
       DATA = await response.json();
+      document.querySelectorAll(".status-pill").forEach(pill => {
+        pill.textContent = DATA.generatedAt ? `Updated · ${DATA.generatedAt}` : pill.textContent;
+      });
       init();
     }
 
