@@ -464,6 +464,7 @@
     }
     .compare-card strong { display: block; font-size: clamp(1.18rem, 1.7vw, 1.55rem); margin-top: 6px; overflow-wrap: anywhere; }
     .compare-card span { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 760; }
+    .compare-card small { display: block; margin-top: 5px; color: var(--muted); font-size: 0.76rem; font-weight: 650; }
     .controls { grid-template-columns: 1fr auto; align-items: end; margin-bottom: 16px; }
     .kpi-groups { margin-bottom: 16px; }
     .kpi-group {

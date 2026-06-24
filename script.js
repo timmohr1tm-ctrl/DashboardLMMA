@@ -365,25 +365,33 @@ let DATA = null;
       return { text: `${sign}${(Math.abs(diff) * 100).toFixed(1).replace(".", ",")} pp`, className: cls(-diff) };
     }
 
-    function comparisonRow(label, firstValue, secondValue, formatter) {
-      const delta = signedDeltaCell(secondValue, firstValue, formatter);
+    function comparisonMetricRow(label, summaries, valueGetter, formatter) {
+      const firstValue = valueGetter(summaries[0]);
+      const lastValue = valueGetter(summaries[summaries.length - 1]);
+      const delta = signedDeltaCell(lastValue, firstValue, formatter);
+      const cells = summaries
+        .map(item => `<td>${valueCell(valueGetter(item), formatter)}</td>`)
+        .join("");
       return `
         <tr>
           <td>${label}</td>
-          <td>${valueCell(firstValue, formatter)}</td>
-          <td>${valueCell(secondValue, formatter)}</td>
+          ${cells}
           <td class="${delta.className}">${delta.text}</td>
         </tr>
       `;
     }
 
-    function comparisonPointRow(label, firstValue, secondValue) {
-      const delta = signedPointDeltaCell(secondValue, firstValue);
+    function comparisonPointMetricRow(label, summaries, valueGetter) {
+      const firstValue = valueGetter(summaries[0]);
+      const lastValue = valueGetter(summaries[summaries.length - 1]);
+      const delta = signedPointDeltaCell(lastValue, firstValue);
+      const cells = summaries
+        .map(item => `<td>${valueCell(valueGetter(item), value => pct.format(value))}</td>`)
+        .join("");
       return `
         <tr>
           <td>${label}</td>
-          <td>${valueCell(firstValue, value => pct.format(value))}</td>
-          <td>${valueCell(secondValue, value => pct.format(value))}</td>
+          ${cells}
           <td class="${delta.className}">${delta.text}</td>
         </tr>
       `;
@@ -395,16 +403,20 @@ let DATA = null;
       return `${formatter(value)} · partial (${number.format(actualDays)}/${number.format(expectedDays)} days)`;
     }
 
-    function comparisonRowWithCoverage(label, firstValue, secondValue, formatter, firstComplete, secondComplete, firstDays, firstExpected, secondDays, secondExpected) {
-      const comparable = firstComplete && secondComplete;
+    function comparisonMetricRowWithCoverage(label, summaries, valueGetter, formatter) {
+      const comparable = summaries.every(item => item.revenueComplete);
+      const firstValue = valueGetter(summaries[0]);
+      const lastValue = valueGetter(summaries[summaries.length - 1]);
       const delta = comparable
-        ? signedDeltaCell(secondValue, firstValue, formatter)
+        ? signedDeltaCell(lastValue, firstValue, formatter)
         : { text: "n/a · incomplete coverage", className: "neutral" };
+      const cells = summaries
+        .map(item => `<td>${coverageCell(valueGetter(item), formatter, item.revenueComplete, item.revenueDays, item.expectedDays)}</td>`)
+        .join("");
       return `
         <tr>
           <td>${label}</td>
-          <td>${coverageCell(firstValue, formatter, firstComplete, firstDays, firstExpected)}</td>
-          <td>${coverageCell(secondValue, formatter, secondComplete, secondDays, secondExpected)}</td>
+          ${cells}
           <td class="${delta.className}">${delta.text}</td>
         </tr>
       `;
@@ -412,10 +424,11 @@ let DATA = null;
 
     function renderExecutiveSearchResult(periods) {
       const result = document.getElementById("executiveSearchResult");
-      const selected = periods.slice(0, 2).map(periodSummary);
+      const maxComparisonPeriods = 4;
+      const selected = periods.slice(0, maxComparisonPeriods).map(periodSummary);
       if (!selected.length) {
         result.hidden = false;
-        result.innerHTML = `<p class="note">I could not identify a valid period in the input. Try: "Compare March 2025 with March 2026", "2025 vs 2026" or "Q1 25 vs Q1 26".</p>`;
+        result.innerHTML = `<p class="note">I could not identify a valid period in the input. Try: "Compare March 2025 with March 2026", "2025 vs 2026", "Q1 25 vs Q1 26" or add up to four explicit periods.</p>`;
         return;
       }
 
@@ -446,65 +459,70 @@ let DATA = null;
         return;
       }
 
-      const [first, second] = selected;
-      const handoverDelta = signedDeltaCell(second.lmHandovers, first.lmHandovers, value => amount(value, true));
-      const otpDelta = signedDeltaCell(second.otp.revenue, first.otp.revenue, value => money(value, true));
-      const listingDelta = signedDeltaCell(second.avgListings, first.avgListings, value => amount(Math.round(value), true));
-      const marketRevenueDelta = signedDeltaCell(second.avgDailyRevenue, first.avgDailyRevenue, value => money(value, true));
-      const leadDelta = signedDeltaCell(second.avgDailyLeads, first.avgDailyLeads, value => amount(Math.round(value), true));
-      const inactiveShareDelta = signedPointDeltaCell(second.inactive?.inactiveShare, first.inactive?.inactiveShare);
-      const locationNetDelta = signedDeltaCell(second.inactive?.netChange, first.inactive?.netChange, value => amount(value, true));
+      const first = selected[0];
+      const last = selected[selected.length - 1];
+      const handoverDelta = signedDeltaCell(last.lmHandovers, first.lmHandovers, value => amount(value, true));
+      const otpDelta = signedDeltaCell(last.otp.revenue, first.otp.revenue, value => money(value, true));
+      const listingDelta = signedDeltaCell(last.avgListings, first.avgListings, value => amount(Math.round(value), true));
+      const marketRevenueDelta = signedDeltaCell(last.avgDailyRevenue, first.avgDailyRevenue, value => money(value, true));
+      const leadDelta = signedDeltaCell(last.avgDailyLeads, first.avgDailyLeads, value => amount(Math.round(value), true));
+      const inactiveShareDelta = signedPointDeltaCell(last.inactive?.inactiveShare, first.inactive?.inactiveShare);
+      const locationNetDelta = signedDeltaCell(last.inactive?.netChange, first.inactive?.netChange, value => amount(value, true));
       const rows = [
-        comparisonRow("LM Assist handovers", first.lmHandovers, second.lmHandovers, value => amount(value, false)),
-        comparisonRow("LM Assist cancellations", first.lmCancellations, second.lmCancellations, value => amount(value, false)),
-        comparisonRow("LM Assist net revenue", first.lmRevenue, second.lmRevenue, value => money(value, false)),
-        comparisonRow("OTP revenue", first.otp.revenue, second.otp.revenue, value => money(value, false)),
-        comparisonRow("OTP target gap", first.otp.gap, second.otp.gap, value => money(value, false)),
-        comparisonRow("Avg. active listings", first.avgListings, second.avgListings, value => amount(Math.round(value), false)),
-        comparisonRowWithCoverage("Market net revenue", first.marketRevenue, second.marketRevenue, value => money(value, false), first.revenueComplete, second.revenueComplete, first.revenueDays, first.expectedDays, second.revenueDays, second.expectedDays),
-        comparisonRow("Avg. daily net revenue", first.avgDailyRevenue, second.avgDailyRevenue, value => money(value, false)),
-        comparisonRowWithCoverage("Total leads", first.totalLeads, second.totalLeads, value => amount(value, false), first.revenueComplete, second.revenueComplete, first.revenueDays, first.expectedDays, second.revenueDays, second.expectedDays),
-        comparisonRowWithCoverage("Net leads", first.netLeads, second.netLeads, value => amount(value, false), first.revenueComplete, second.revenueComplete, first.revenueDays, first.expectedDays, second.revenueDays, second.expectedDays),
-        comparisonRow("Avg. daily net leads", first.avgDailyLeads, second.avgDailyLeads, value => amount(Math.round(value), false)),
-        comparisonPointRow("Inactive location share", first.inactive?.inactiveShare, second.inactive?.inactiveShare),
-        comparisonRow("Active dealer locations", first.inactive?.activeLocations, second.inactive?.activeLocations, value => amount(value, false)),
-        comparisonRow("Newly inactive locations", first.inactive?.newlyInactive, second.inactive?.newlyInactive, value => amount(value, false)),
-        comparisonRow("Newly activated locations", first.inactive?.newlyActivated, second.inactive?.newlyActivated, value => amount(value, false)),
-        comparisonRow("Net location change", first.inactive?.netChange, second.inactive?.netChange, value => amount(value, false))
+        comparisonMetricRow("LM Assist handovers", selected, item => item.lmHandovers, value => amount(value, false)),
+        comparisonMetricRow("LM Assist cancellations", selected, item => item.lmCancellations, value => amount(value, false)),
+        comparisonMetricRow("LM Assist net revenue", selected, item => item.lmRevenue, value => money(value, false)),
+        comparisonMetricRow("OTP revenue", selected, item => item.otp.revenue, value => money(value, false)),
+        comparisonMetricRow("OTP target gap", selected, item => item.otp.gap, value => money(value, false)),
+        comparisonMetricRow("Avg. active listings", selected, item => item.avgListings, value => amount(Math.round(value), false)),
+        comparisonMetricRowWithCoverage("Market net revenue", selected, item => item.marketRevenue, value => money(value, false)),
+        comparisonMetricRow("Avg. daily net revenue", selected, item => item.avgDailyRevenue, value => money(value, false)),
+        comparisonMetricRowWithCoverage("Total leads", selected, item => item.totalLeads, value => amount(value, false)),
+        comparisonMetricRowWithCoverage("Net leads", selected, item => item.netLeads, value => amount(value, false)),
+        comparisonMetricRow("Avg. daily net leads", selected, item => item.avgDailyLeads, value => amount(Math.round(value), false)),
+        comparisonPointMetricRow("Inactive location share", selected, item => item.inactive?.inactiveShare),
+        comparisonMetricRow("Active dealer locations", selected, item => item.inactive?.activeLocations, value => amount(value, false)),
+        comparisonMetricRow("Newly inactive locations", selected, item => item.inactive?.newlyInactive, value => amount(value, false)),
+        comparisonMetricRow("Newly activated locations", selected, item => item.inactive?.newlyActivated, value => amount(value, false)),
+        comparisonMetricRow("Net location change", selected, item => item.inactive?.netChange, value => amount(value, false))
       ].join("");
 
-      const listingNote = first.listingDays && second.listingDays
-        ? `Active-listing comparison uses ${number.format(first.listingDays)} daily listing points in ${first.label} and ${number.format(second.listingDays)} in ${second.label}.`
+      const listingNote = selected.every(item => item.listingDays)
+        ? `Active-listing comparison uses ${selected.map(item => `${number.format(item.listingDays)} points in ${item.label}`).join(", ")}.`
         : "Active-listing comparison is shown as n/a where no listing history exists for one of the selected months.";
-      const revenueNote = first.revenueDays && second.revenueDays
-        ? `Revenue and lead comparison uses ${number.format(first.revenueDays)} daily market rows in ${first.label} and ${number.format(second.revenueDays)} in ${second.label}.`
+      const revenueNote = selected.every(item => item.revenueDays)
+        ? `Revenue and lead comparison uses ${selected.map(item => `${number.format(item.revenueDays)} rows in ${item.label}`).join(", ")}.`
         : "Revenue and lead comparison is shown as n/a where no daily market revenue history exists for one of the selected months.";
-      const coverageWarning = first.revenueComplete && second.revenueComplete
+      const coverageWarning = selected.every(item => item.revenueComplete)
         ? "Market revenue and lead totals cover the full selected periods."
         : "Market revenue and lead totals are not compared as full-period deltas when one period has incomplete daily coverage; use the average daily rows for directional comparison or provide the missing daily revenue history.";
-      const comparisonWindowNote = first.kind === "year-to-date" || second.kind === "year-to-date"
+      const comparisonWindowNote = selected.some(item => item.kind === "year-to-date")
         ? `Year comparison is aligned to the latest available LM Assist date: ${formatDateLabel(DATA.lm.maxDate)}.`
-        : `Comparison windows: ${formatDateLabel(first.start)} to ${formatDateLabel(first.end)} versus ${formatDateLabel(second.start)} to ${formatDateLabel(second.end)}.`;
+        : `Comparison windows: ${selected.map(item => `${item.label}: ${formatDateLabel(item.start)} to ${formatDateLabel(item.end)}`).join(" · ")}.`;
+      const ignoredPeriodsNote = periods.length > maxComparisonPeriods
+        ? ` Only the first ${maxComparisonPeriods} recognised periods are shown to keep the comparison readable.`
+        : "";
+      const tableHeaders = selected.map(item => `<th>${item.label}</th>`).join("");
       result.hidden = false;
       result.innerHTML = `
-        <h2 class="section-title">Search Result: ${first.label} vs ${second.label}</h2>
-        <p class="section-subtitle">The dashboard range has been updated automatically. The comparison below reads LM Assist, OTP, daily listings, daily market revenue and daily leads without requiring manual filter setup.</p>
+        <h2 class="section-title">Search Result: ${selected.map(item => item.label).join(" vs ")}</h2>
+        <p class="section-subtitle">The dashboard range has been updated automatically. The comparison below reads LM Assist, OTP, daily listings, daily market revenue and daily leads for up to four periods without requiring manual filter setup.</p>
         <div class="compare-summary">
-          <div class="compare-card"><span>LM Handover Change</span><strong class="${handoverDelta.className}">${handoverDelta.text}</strong></div>
-          <div class="compare-card"><span>OTP Revenue Change</span><strong class="${otpDelta.className}">${otpDelta.text}</strong></div>
-          <div class="compare-card"><span>Listing Change</span><strong class="${listingDelta.className}">${listingDelta.text}</strong></div>
-          <div class="compare-card"><span>Avg. Daily Revenue Change</span><strong class="${marketRevenueDelta.className}">${marketRevenueDelta.text}</strong></div>
-          <div class="compare-card"><span>Avg. Daily Lead Change</span><strong class="${leadDelta.className}">${leadDelta.text}</strong></div>
-          <div class="compare-card"><span>Inactive Share Change</span><strong class="${inactiveShareDelta.className}">${inactiveShareDelta.text}</strong></div>
-          <div class="compare-card"><span>Net Location Change</span><strong class="${locationNetDelta.className}">${locationNetDelta.text}</strong></div>
+          <div class="compare-card"><span>LM Handover Change</span><strong class="${handoverDelta.className}">${handoverDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>OTP Revenue Change</span><strong class="${otpDelta.className}">${otpDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>Listing Change</span><strong class="${listingDelta.className}">${listingDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>Avg. Daily Revenue Change</span><strong class="${marketRevenueDelta.className}">${marketRevenueDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>Avg. Daily Lead Change</span><strong class="${leadDelta.className}">${leadDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>Inactive Share Change</span><strong class="${inactiveShareDelta.className}">${inactiveShareDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
+          <div class="compare-card"><span>Net Location Change</span><strong class="${locationNetDelta.className}">${locationNetDelta.text}</strong><small>${first.label} to ${last.label}</small></div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Metric</th><th>${first.label}</th><th>${second.label}</th><th>Change</th></tr></thead>
+            <thead><tr><th>Metric</th>${tableHeaders}<th>Change ${first.label} to ${last.label}</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
-        <p class="note" style="margin-top:12px;">${comparisonWindowNote} ${listingNote} ${revenueNote} ${coverageWarning}</p>
+        <p class="note" style="margin-top:12px;">${comparisonWindowNote}${ignoredPeriodsNote} ${listingNote} ${revenueNote} ${coverageWarning}</p>
       `;
     }
 
@@ -514,7 +532,7 @@ let DATA = null;
       const periods = parseExecutivePeriods(input.value);
       if (!periods.length) {
         result.hidden = false;
-        result.innerHTML = `<p class="note">No period was detected. Please use a query like "Compare March 2025 with March 2026", "2025 vs 2026" or "first quarter 25 vs first quarter 26".</p>`;
+        result.innerHTML = `<p class="note">No period was detected. Please use a query like "Compare March 2025 with March 2026", "March 2025 vs March 2026 vs April 2026", "2025 vs 2026" or "first quarter 25 vs first quarter 26".</p>`;
         return;
       }
       renderExecutiveSearchResult(periods);
@@ -1671,7 +1689,7 @@ let DATA = null;
         subtitle: "Compact comparison table from the selected executive search result.",
         selector: "#executiveSearchResult .table-wrap",
         requiresVisible: true,
-        missingMessage: "Please run a comparison with two periods first, then export the table."
+        missingMessage: "Please run a comparison with at least two periods first, then export the table."
       },
       "budget-kpis": {
         title: "Budget KPI Group",
