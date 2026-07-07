@@ -214,6 +214,12 @@ let DATA = null;
       return Math.max(Math.round((endDate - startDate) / 86400000) + 1, 0);
     }
 
+    function runRateForecast(value, actualDays, expectedDays) {
+      if (value == null || !actualDays || !expectedDays) return null;
+      if (actualDays >= expectedDays) return value;
+      return (value / actualDays) * expectedDays;
+    }
+
     function otpMonthSummary(monthKey) {
       const [year, month] = monthKey.split("-");
       const currentYearRow = DATA.otp.rows.find(row => row.monthKey === monthKey);
@@ -253,6 +259,7 @@ let DATA = null;
       const start = `${monthKey}-01`;
       const end = monthEnd(monthKey);
       const expectedDays = dayCountInclusive(start, end);
+      const revenueDays = revenueRows.length;
       return {
         monthKey,
         label: formatMonthLabel(monthKey),
@@ -266,9 +273,12 @@ let DATA = null;
         otp: otpMonthSummary(monthKey),
         avgListings: avg(listingRows.map(row => row.activeListings)),
         marketRevenue,
+        marketRevenueForecast: runRateForecast(marketRevenue, revenueDays, expectedDays),
         avgDailyRevenue: avg(revenueRows.map(row => row.netRevenue || 0)),
         totalLeads,
+        totalLeadsForecast: runRateForecast(totalLeads, revenueDays, expectedDays),
         netLeads,
+        netLeadsForecast: runRateForecast(netLeads, revenueDays, expectedDays),
         avgDailyLeads: avg(revenueRows.map(row => row.netLeads || 0)),
         inactive: inactiveRow ? {
           activeLocations: inactiveRow.activeLocations,
@@ -279,9 +289,9 @@ let DATA = null;
           monthCount: 1
         } : { activeLocations: null, newlyInactive: null, newlyActivated: null, netChange: null, inactiveShare: null, monthCount: 0 },
         listingDays: listingRows.length,
-        revenueDays: revenueRows.length,
+        revenueDays,
         listingComplete: listingRows.length >= expectedDays,
-        revenueComplete: revenueRows.length >= expectedDays
+        revenueComplete: revenueDays >= expectedDays
       };
     }
 
@@ -308,6 +318,10 @@ let DATA = null;
       const otpRevenue = sumOrNull(otpRevenueValues);
       const otpTarget = sumOrNull(otpTargetValues);
       const inactiveLatest = inactiveRows.length ? inactiveRows[inactiveRows.length - 1] : null;
+      const marketRevenue = sumOrNull(revenueRows.map(row => row.netRevenue || 0));
+      const totalLeads = sumOrNull(revenueRows.map(row => row.totalLeads || 0));
+      const netLeads = sumOrNull(revenueRows.map(row => row.netLeads || 0));
+      const revenueDays = revenueRows.length;
 
       return {
         ...period,
@@ -324,10 +338,13 @@ let DATA = null;
           period: period.label
         },
         avgListings: avg(listingRows.map(row => row.activeListings)),
-        marketRevenue: sumOrNull(revenueRows.map(row => row.netRevenue || 0)),
+        marketRevenue,
+        marketRevenueForecast: runRateForecast(marketRevenue, revenueDays, expectedDays),
         avgDailyRevenue: avg(revenueRows.map(row => row.netRevenue || 0)),
-        totalLeads: sumOrNull(revenueRows.map(row => row.totalLeads || 0)),
-        netLeads: sumOrNull(revenueRows.map(row => row.netLeads || 0)),
+        totalLeads,
+        totalLeadsForecast: runRateForecast(totalLeads, revenueDays, expectedDays),
+        netLeads,
+        netLeadsForecast: runRateForecast(netLeads, revenueDays, expectedDays),
         avgDailyLeads: avg(revenueRows.map(row => row.netLeads || 0)),
         inactive: {
           activeLocations: inactiveLatest ? inactiveLatest.activeLocations : null,
@@ -339,9 +356,9 @@ let DATA = null;
           monthCount: inactiveRows.length
         },
         listingDays: listingRows.length,
-        revenueDays: revenueRows.length,
+        revenueDays,
         listingComplete: listingRows.length >= expectedDays,
-        revenueComplete: revenueRows.length >= expectedDays
+        revenueComplete: revenueDays >= expectedDays
       };
     }
 
@@ -397,21 +414,24 @@ let DATA = null;
       `;
     }
 
-    function coverageCell(value, formatter, complete, actualDays, expectedDays) {
-      if (value == null) return "n/a";
+    function coverageCell(value, forecast, formatter, complete, actualDays, expectedDays) {
+      if (value == null && forecast == null) return "n/a";
       if (complete) return formatter(value);
-      return `${formatter(value)} · partial (${number.format(actualDays)}/${number.format(expectedDays)} days)`;
+      if (forecast == null) return `YTD ${formatter(value)} · ${number.format(actualDays)}/${number.format(expectedDays)} days`;
+      return `<span class="forecast-cell"><strong>YTD ${formatter(value)}</strong><small>Forecast ${formatter(forecast)} · ${number.format(actualDays)}/${number.format(expectedDays)} days</small></span>`;
     }
 
-    function comparisonMetricRowWithCoverage(label, summaries, valueGetter, formatter) {
-      const comparable = summaries.every(item => item.revenueComplete);
-      const firstValue = valueGetter(summaries[0]);
-      const lastValue = valueGetter(summaries[summaries.length - 1]);
-      const delta = comparable
-        ? signedDeltaCell(lastValue, firstValue, formatter)
-        : { text: "n/a · incomplete coverage", className: "neutral" };
+    function comparisonMetricRowWithCoverage(label, summaries, valueGetter, forecastGetter, formatter) {
+      const comparableValue = item => item.revenueComplete ? valueGetter(item) : (forecastGetter(item) ?? valueGetter(item));
+      const firstValue = comparableValue(summaries[0]);
+      const lastValue = comparableValue(summaries[summaries.length - 1]);
+      const delta = signedDeltaCell(lastValue, firstValue, formatter);
+      const hasForecast = summaries.some(item => !item.revenueComplete && forecastGetter(item) != null);
+      if (hasForecast && delta.text !== "n/a") {
+        delta.text = `${delta.text} · FC`;
+      }
       const cells = summaries
-        .map(item => `<td>${coverageCell(valueGetter(item), formatter, item.revenueComplete, item.revenueDays, item.expectedDays)}</td>`)
+        .map(item => `<td>${coverageCell(valueGetter(item), forecastGetter(item), formatter, item.revenueComplete, item.revenueDays, item.expectedDays)}</td>`)
         .join("");
       return `
         <tr>
@@ -475,10 +495,10 @@ let DATA = null;
         comparisonMetricRow("OTP revenue", selected, item => item.otp.revenue, value => money(value, false)),
         comparisonMetricRow("OTP target gap", selected, item => item.otp.gap, value => money(value, false)),
         comparisonMetricRow("Avg. active listings", selected, item => item.avgListings, value => amount(Math.round(value), false)),
-        comparisonMetricRowWithCoverage("Market net revenue", selected, item => item.marketRevenue, value => money(value, false)),
+        comparisonMetricRowWithCoverage("Market net revenue", selected, item => item.marketRevenue, item => item.marketRevenueForecast, value => money(value, false)),
         comparisonMetricRow("Avg. daily net revenue", selected, item => item.avgDailyRevenue, value => money(value, false)),
-        comparisonMetricRowWithCoverage("Total leads", selected, item => item.totalLeads, value => amount(value, false)),
-        comparisonMetricRowWithCoverage("Net leads", selected, item => item.netLeads, value => amount(value, false)),
+        comparisonMetricRowWithCoverage("Total leads", selected, item => item.totalLeads, item => item.totalLeadsForecast, value => amount(value, false)),
+        comparisonMetricRowWithCoverage("Net leads", selected, item => item.netLeads, item => item.netLeadsForecast, value => amount(value, false)),
         comparisonMetricRow("Avg. daily net leads", selected, item => item.avgDailyLeads, value => amount(Math.round(value), false)),
         comparisonPointMetricRow("Inactive location share", selected, item => item.inactive?.inactiveShare),
         comparisonMetricRow("Active dealer locations", selected, item => item.inactive?.activeLocations, value => amount(value, false)),
@@ -495,7 +515,7 @@ let DATA = null;
         : "Revenue and lead comparison is shown as n/a where no daily market revenue history exists for one of the selected months.";
       const coverageWarning = selected.every(item => item.revenueComplete)
         ? "Market revenue and lead totals cover the full selected periods."
-        : "Market revenue and lead totals are not compared as full-period deltas when one period has incomplete daily coverage; use the average daily rows for directional comparison or provide the missing daily revenue history.";
+        : "Incomplete market revenue and lead periods show the available YTD result plus a run-rate forecast; the change column uses forecast values where needed.";
       const comparisonWindowNote = selected.some(item => item.kind === "year-to-date")
         ? `Year comparison is aligned to the latest available LM Assist date: ${formatDateLabel(DATA.lm.maxDate)}.`
         : `Comparison windows: ${selected.map(item => `${item.label}: ${formatDateLabel(item.start)} to ${formatDateLabel(item.end)}`).join(" · ")}.`;
